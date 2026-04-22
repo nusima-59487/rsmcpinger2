@@ -17,14 +17,14 @@ it also tracks online time for each player
 4. install mcrcon, put it in `/../workingdirectory/mcrcon/mcrcon`
 5. run the bot (or put it as a service) 
 
-**For server**
+**For minecraft server**
 1. go to `server.properties`, edit the following fields: 
     - `enable-rcon` to `true`
     - `rcon-password` to whatever you want
-2. when bot is on, invite to server
-3. on the channel you wanted to send status messages, run the `/setup` command (admin only)
-4. you are all set!
-5. in case of editing the server to ping to, just run the `/setup` command again
+2. when bot is on, invite to a discord server
+3. on the channel you want it to send status messages, run the `/setup` command (admin only)
+4. you are all set! (hint: delete the setup message to avoid leaking the rcon password)
+5. in case of editing the minecraft server to ping to, just run the `/setup` command again
 
 ### Available commands
 - `/setup` admin only - setup minecraft server to ping to
