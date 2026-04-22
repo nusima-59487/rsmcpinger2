@@ -1,8 +1,10 @@
 ## rsmcpinger2
 
-basically a discord bot that pings to a minecraft server and checks whether the server is up, and checks changes in online player list
+basically a discord bot that pings to a minecraft server and checks whether the server is up, and checks changes in online player list using minecraft's remote console
 
 it also tracks online time for each player
+
+no minecraft server-side mods/plugins needed! vanilla compatible!
 
 #### Used libs
 - Discord bot: `poise`
@@ -17,7 +19,7 @@ it also tracks online time for each player
 4. install mcrcon, put it in `/../workingdirectory/mcrcon/mcrcon`
 5. run the bot (or put it as a service) 
 
-**For minecraft server**
+#### For minecraft server
 1. go to `server.properties`, edit the following fields: 
     - `enable-rcon` to `true`
     - `rcon-password` to whatever you want
