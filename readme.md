@@ -1,4 +1,4 @@
-## rsmcpinger3
+## rsmcpinger2
 
 basically a discord bot that pings to a minecraft server and checks whether the server is up, and checks changes in online player list
 
