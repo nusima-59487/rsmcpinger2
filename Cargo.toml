@@ -1,0 +1,11 @@
+[package]
+name = "mcguard"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.44"
+poise = "0.6.1"
+serde = "1.0.228"
+serde_json = "1.0.149"
+tokio = "1.45.0"
