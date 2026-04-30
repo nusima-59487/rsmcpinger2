@@ -38,7 +38,7 @@ async fn ping(ctx: Context<'_>) -> Result<(), CommandError> {
     ctx.send(
         CreateReply::default().embed(
             CreateEmbed::new()
-                .title("Pong!")
+                .title("🏓  Pong!")
                 .description(format!("Delay is {}ms", time_diff))
                 .color(color),
         ),
