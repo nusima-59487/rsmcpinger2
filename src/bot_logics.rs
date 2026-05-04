@@ -183,9 +183,9 @@ async fn new_bot_pinger_logic(bot_ctx: Context) {
             return;
         }
         let mut server_datas = server_datas_result.unwrap();
-        for (dc_server_id, server_data) in server_datas.iter_mut() {
+        for (_, server_data) in server_datas.iter_mut() {
             if let Err(e) = server_pinger_logic(&bot_ctx, server_data).await {
-                let _ = ChannelId::new(*dc_server_id)
+                let _ = ChannelId::new(server_data.status_channel_id)
                     .send_message(&bot_ctx, CreateMessage::new().embed(e.get_embed()))
                     .await
                     .inspect_err(|e| eprintln!("{:?}", e));
