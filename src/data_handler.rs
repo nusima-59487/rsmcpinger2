@@ -102,6 +102,7 @@ impl ServerData {
     /// 
     /// if error, server is prolly offline, you needa call the function yourself tho
     pub async fn fetch_slp (&self) -> Result<serde_json::Value, Error>  {
+        println!("pinging server, if the bot freezes here that means the logic below is broken"); 
         let rcon_time_limit = tokio::time::Duration::from_secs(RCON_TIME_LIMIT_SECS);
 
         return match tokio::time::timeout(rcon_time_limit, pinger::ping(&self.server_address, self.server_port)).await {

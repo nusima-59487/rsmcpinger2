@@ -20,7 +20,7 @@ type Context<'a> = poise::Context<'a, Data, CommandError>;
 
 const SERVER_DATA_ROOT_DIR: &str = "./serverdata";
 const PING_INTERVAL_SECS: u64 = 30;
-const RCON_TIME_LIMIT_SECS: u64 = 2;
+const RCON_TIME_LIMIT_SECS: u64 = 5;
 
 /// Pong!
 #[poise::command(slash_command, prefix_command)]

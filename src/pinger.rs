@@ -1,8 +1,10 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::process::Command;
+use std::time::Duration;
 
+use mc_rcon::RconClient;
 use serde_json::Value;
+use tokio::time::timeout;
 
 use crate::RCON_TIME_LIMIT_SECS;
 use crate::err::{Error, ErrorCause};
@@ -123,37 +125,43 @@ pub async fn mcrcon(
     rcon_password: &str,
     command: String,
 ) -> Result<String, Error> {
-    println!("./mcrcon/mcrcon -cH {:?} -p {:?} {:?}", server_address, rcon_password, command); 
+    async fn mcrcon_inner(
+        server_address: &str,
+        rcon_port: u16,
+        rcon_password: &str,
+        command: String,
+    ) -> Result<String, Error> {
+        let client =
+            RconClient::connect(format!("{server_address}:{rcon_port}")).map_err(|e| Error {
+                cause: ErrorCause::RconHandshake,
+                reason: e.to_string(),
+            })?;
 
-    let result = Command::new("./mcrcon/mcrcon")
-        .arg("-cH")
-        .arg(server_address)
-        // .arg("-P")
-        // .arg(&rcon_port.to_string())
-        .arg("-p")
-        .arg(rcon_password)
-        .arg(command)
-        .output();
+        client.log_in(rcon_password).map_err(|e| Error {
+            cause: ErrorCause::RconAuth,
+            reason: e.to_string(),
+        })?;
 
-    match result {
-        Ok(output) => {
-            if output.status.success() {
-                let output_msg = String::from_utf8_lossy(&output.stdout).to_string();
-                return Ok(output_msg);
-            } else {
-                // TODO: output.status.code()
-                let output_msg = String::from_utf8_lossy(&output.stderr).to_string();
-                return Err(Error { cause: ErrorCause::RconCommand, reason: output_msg }); 
-            }
-        }
-        Err(why) => {
-            println!("Failed to execute mcrcon command: {why}");
-            return Err(Error {
-                cause: ErrorCause::RconProcess, 
-                reason: why.to_string()
-            }); 
-        }
+        let result = client.send_command(&command).map_err(|e| Error {
+            cause: ErrorCause::RconCommand,
+            reason: format!("{e:?}"),
+        })?;
+
+        return Ok(result);
     }
+
+    return match timeout(
+        Duration::from_secs(RCON_TIME_LIMIT_SECS),
+        mcrcon_inner(server_address, rcon_port, rcon_password, command),
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(_) => Err(Error {
+            cause: ErrorCause::RconHandshake,
+            reason: "RCON Connection Timed Out".into(),
+        }),
+    };
 }
 
 /// utilizing mcrcon
@@ -162,17 +170,7 @@ pub async fn fetch_player_list(
     rcon_port: u16,
     rcon_password: &str,
 ) -> Result<Vec<String>, Error> {
-
-    
-    let rcon_time_limit = tokio::time::Duration::from_secs(RCON_TIME_LIMIT_SECS);
-
-    let result = match tokio::time::timeout(rcon_time_limit, mcrcon(server_address, rcon_port, rcon_password, "list".to_string())).await {
-        Ok(result) => result?,
-        Err(_) => {
-            eprintln!("RCON command timed out!");
-            return Err(Error { cause: ErrorCause::RconCommand, reason: "RCON command timed out".into() })
-        },
-    };
+    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?; 
 
     // let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?;
     // match result {

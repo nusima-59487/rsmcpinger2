@@ -863,10 +863,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
+name = "mc-rcon"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7274fcd1a810664c2f8e3dd115750dee793e38085a1f4792c5f957c0b756e650"
+dependencies = [
+ "arrayvec",
+]
+
+[[package]]
 name = "mcguard"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "mc-rcon",
  "poise",
  "serde",
  "serde_json",
