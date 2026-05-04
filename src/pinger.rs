@@ -108,6 +108,7 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
         cause: ErrorCause::SlpResReadUtf, 
         reason: e.to_string(),
     })?;
+    println!("Received SLP response JSON: {res_json_str}");
     let res_json: Value = serde_json::from_str(&res_json_str).map_err(|e| Error {
         cause: ErrorCause::SlpResDeserialize, 
         reason: format!("Error parsing response JSON: {}", e.to_string()),
