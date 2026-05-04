@@ -63,7 +63,7 @@ fn read_varint(stream: &mut TcpStream) -> Result<i32, String> {
 pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error> {
     let mut stream =
         TcpStream::connect(&format!("{server_address}:{server_port}")).map_err(|e| Error {
-            cause: ErrorCause::SlpConn, 
+            cause: ErrorCause::SlpConn,
             reason: e.to_string(),
         })?;
 
@@ -77,7 +77,7 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
     stream
         .write(&handshake_payload.into_boxed_slice())
         .map_err(|e| Error {
-            cause: ErrorCause::SlpHandshake, 
+            cause: ErrorCause::SlpHandshake,
             reason: e.to_string(),
         })?;
 
@@ -87,33 +87,32 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
     stream
         .write(&request_payload.into_boxed_slice())
         .map_err(|e| Error {
-            cause: ErrorCause::SlpRequest, 
+            cause: ErrorCause::SlpRequest,
             reason: e.to_string(),
         })?;
 
     // Response
     let _ = read_varint(&mut stream).map_err(|e| Error {
-            cause: ErrorCause::SlpResponse, 
-            reason: e.to_string()
-        })? as usize; // packet size
+        cause: ErrorCause::SlpResponse,
+        reason: e.to_string(),
+    })? as usize; // packet size
     let _ = stream.read_exact(&mut [0_u8]); // packet id
     let res_json_size = read_varint(&mut stream).map_err(|e| Error {
-        cause: ErrorCause::SlpResponse, 
+        cause: ErrorCause::SlpResponse,
         reason: e.to_string(),
     })? as usize; // json response size
     let mut res_json_buffer = vec![0_u8; res_json_size].into_boxed_slice();
     stream.read_exact(&mut res_json_buffer).map_err(|e| Error {
-        cause: ErrorCause::SlpResReadBuf, 
+        cause: ErrorCause::SlpResReadBuf,
         reason: e.to_string(),
     })?;
     let res_json_str = String::from_utf8(res_json_buffer.to_vec()).map_err(|e| Error {
-        cause: ErrorCause::SlpResReadUtf, 
+        cause: ErrorCause::SlpResReadUtf,
         reason: e.to_string(),
     })?;
-    println!("Received SLP response JSON: {res_json_str}");
     let res_json: Value = serde_json::from_str(&res_json_str).map_err(|e| Error {
-        cause: ErrorCause::SlpResDeserialize, 
-        reason: format!("Error parsing response JSON: {}", e.to_string()),
+        cause: ErrorCause::SlpResDeserialize,
+        reason: format!("Error parsing response JSON: {}\nOriginal JSON: {}", e.to_string(), res_json_str),
     })?;
 
     Ok(res_json)
