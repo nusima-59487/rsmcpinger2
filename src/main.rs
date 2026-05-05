@@ -259,7 +259,7 @@ async fn playtime_player(
     return Ok(());
 }
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() {
     let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
     let proxy = std::env::var("PROXY").expect("missing PROXY"); 
