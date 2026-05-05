@@ -9,10 +9,7 @@ use poise::serenity_prelude::{
     async_trait,
 };
 use std::sync::Mutex;
-use std::{
-    collections::HashMap,
-    time::Duration,
-};
+use std::{collections::HashMap, time::Duration};
 use tokio::time::sleep;
 
 /// i don't have an utils file so im putting it here
@@ -46,11 +43,11 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
         .filter(|(_, data)| data.is_online)
         .collect();
     let old_online_players_count = online_players_data.len() as u64;
-    let new_online_players_count = match online_status_result
-        .map(|v| v["players"]["online"].as_u64()) {
+    let new_online_players_count =
+        match online_status_result.map(|v| v["players"]["online"].as_u64()) {
             Ok(val) => val,
             Err(_) => None,
-        }; 
+        };
 
     if server_data.is_online != is_server_online {
         server_data.set_online(is_server_online);
@@ -126,8 +123,6 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
             server_data.set_player_data(&player_name, player_data);
         }
     }
-
-    
 
     if embeds_to_return.is_empty() {
         server_data.save()?;
@@ -214,7 +209,8 @@ pub struct Listener {
 impl EventHandler for Listener {
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("Bot is ready!");
-        { // mutex lock scope
+        {
+            // mutex lock scope
             let Ok(mut handle_lock) = self.existing_handle.lock() else {
                 eprintln!("Failed to acquire lock for pinger handle");
                 return;
@@ -224,8 +220,8 @@ impl EventHandler for Listener {
                 return;
             }
             let handle = tokio::spawn(async move {
-                new_bot_pinger_logic(ctx.clone()).await; 
-            }); 
+                new_bot_pinger_logic(ctx.clone()).await;
+            });
             *handle_lock = Some(handle);
         }
         println!("Pinger task started.");
