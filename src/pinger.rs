@@ -106,6 +106,13 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
         cause: ErrorCause::SlpResReadBuf,
         reason: e.to_string(),
     })?;
+    if res_json_buffer.is_empty() {
+        eprintln!("Received empty response from server!");
+        return Err(Error {
+            cause: ErrorCause::SlpConn,
+            reason: "Received empty response from server".into(),
+        });
+    }
     let res_json_str = String::from_utf8(res_json_buffer.to_vec()).map_err(|e| Error {
         cause: ErrorCause::SlpResReadUtf,
         reason: e.to_string(),
