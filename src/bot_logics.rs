@@ -33,11 +33,11 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
     let mut embeds_to_return: Vec<CreateEmbed> = vec![];
 
     let online_status_result = server_data.fetch_slp().await;
-    let is_server_online = match online_status_result {
+    let is_server_online = match &online_status_result {
         Ok(_val) => true,
         Err(Error { cause, .. }) if matches!(cause, ErrorCause::SlpConn) => false,
         Err(why) => {
-            return Err(why);
+            return Err(why.clone());
         }
     };
     let online_players_data: HashMap<_, _> = server_data
@@ -46,7 +46,11 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
         .filter(|(_, data)| data.is_online)
         .collect();
     let old_online_players_count = online_players_data.len() as u64;
-    let new_online_players_count = server_data.fetch_online_players_count().await.ok();
+    let new_online_players_count = match online_status_result
+        .map(|v| v["players"]["online"].as_u64()) {
+            Ok(val) => val,
+            Err(_) => None,
+        }; 
 
     if server_data.is_online != is_server_online {
         server_data.set_online(is_server_online);
