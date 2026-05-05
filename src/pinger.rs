@@ -1,5 +1,5 @@
-use std::io::{Read, Write};
-use std::net::TcpStream;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 use std::time::Duration;
 
 use mc_rcon::RconClient;
@@ -39,12 +39,12 @@ fn stream_str(s: &str) -> Vec<u8> {
     return bytes;
 }
 
-fn read_varint(stream: &mut TcpStream) -> Result<i32, String> {
+async fn read_varint(stream: &mut TcpStream) -> Result<i32, String> {
     let mut val: i32 = 0;
     let mut pos = 0;
     loop {
         let mut buf = [0; 1];
-        stream.read(&mut buf).map_err(|e| e.to_string())?;
+        stream.read(&mut buf).await.map_err(|e| e.to_string())?;
         val |= ((buf[0] & 0x7f) as i32) << pos;
 
         if buf[0] & 0x80 == 0 {
@@ -62,7 +62,7 @@ fn read_varint(stream: &mut TcpStream) -> Result<i32, String> {
 
 pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error> {
     let mut stream =
-        TcpStream::connect(&format!("{server_address}:{server_port}")).map_err(|e| Error {
+        TcpStream::connect(&format!("{server_address}:{server_port}")).await.map_err(|e| Error {
             cause: ErrorCause::SlpConn,
             reason: e.to_string(),
         })?;
@@ -76,6 +76,7 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
     handshake_payload.splice(0..0, stream_varint(handshake_payload.len() as i32)); // prepend length
     stream
         .write(&handshake_payload.into_boxed_slice())
+        .await
         .map_err(|e| Error {
             cause: ErrorCause::SlpHandshake,
             reason: e.to_string(),
@@ -86,23 +87,24 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
     request_payload.splice(0..0, stream_varint(request_payload.len() as i32)); // prepend length
     stream
         .write(&request_payload.into_boxed_slice())
+        .await
         .map_err(|e| Error {
             cause: ErrorCause::SlpRequest,
             reason: e.to_string(),
         })?;
 
     // Response
-    let _ = read_varint(&mut stream).map_err(|e| Error {
+    let _ = read_varint(&mut stream).await.map_err(|e| Error {
         cause: ErrorCause::SlpResponse,
         reason: e.to_string(),
     })? as usize; // packet size
     let _ = stream.read_exact(&mut [0_u8]); // packet id
-    let res_json_size = read_varint(&mut stream).map_err(|e| Error {
+    let res_json_size = read_varint(&mut stream).await.map_err(|e| Error {
         cause: ErrorCause::SlpResponse,
         reason: e.to_string(),
     })? as usize; // json response size
     let mut res_json_buffer = vec![0_u8; res_json_size].into_boxed_slice();
-    stream.read_exact(&mut res_json_buffer).map_err(|e| Error {
+    stream.read_exact(&mut res_json_buffer).await.map_err(|e| Error {
         cause: ErrorCause::SlpResReadBuf,
         reason: e.to_string(),
     })?;
@@ -145,7 +147,7 @@ pub async fn mcrcon(
 
         client.log_in(rcon_password).map_err(|e| Error {
             cause: ErrorCause::RconAuth,
-            reason: e.to_string(),
+            reason: format!("{e:?}"),
         })?;
 
         let result = client.send_command(&command).map_err(|e| Error {
