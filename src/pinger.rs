@@ -185,7 +185,8 @@ pub async fn fetch_player_list(
     rcon_port: u16,
     rcon_password: &str,
 ) -> Result<Vec<String>, Error> {
-    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?;
+    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await
+        .inspect_err(|e| eprintln!("Failed RCON Attempt: {e:?}"))?;
 
     // let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?;
     // match result {
