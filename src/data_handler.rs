@@ -56,6 +56,7 @@ pub struct ServerData {
     pub rcon_password: String, 
     pub status_channel_id: u64, 
     pub status_message_id: Option<MessageId>, 
+    pub last_error_msg_id: Option<MessageId>,
     pub is_online: bool, 
     pub player_data: HashMap<String, PlayerData>,
     #[serde(skip)]
@@ -182,7 +183,8 @@ impl ServerData {
             rcon_password, 
             is_online: false, 
             status_channel_id, 
-            status_message_id: None, 
+            status_message_id: None,
+            last_error_msg_id: None,  
             player_data: HashMap::new(), 
             filepath: filename, 
         }
