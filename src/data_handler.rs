@@ -100,7 +100,7 @@ impl ServerData {
 
     /// using mcrcon
     pub async fn fetch_online_players_list(&self) -> Result<Vec<String>, Error> {
-        pinger::fetch_player_list(&self.server_address, self.server_port, &self.rcon_password).await
+        pinger::fetch_player_list(&self.server_address, self.rcon_port, &self.rcon_password).await
     }
     /// using fetch_slp
     pub async fn fetch_online_players_count(&self) -> Result<u64, Error> {
