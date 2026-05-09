@@ -98,7 +98,7 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
         cause: ErrorCause::SlpResponse,
         reason: e.to_string(),
     })? as usize; // packet size
-    let _ = stream.read_exact(&mut [0_u8]); // packet id
+    let _ = stream.read_exact(&mut [0_u8]).await; // packet id
     let res_json_size = read_varint(&mut stream).await.map_err(|e| Error {
         cause: ErrorCause::SlpResponse,
         reason: e.to_string(),
