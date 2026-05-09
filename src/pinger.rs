@@ -1,6 +1,6 @@
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use std::time::Duration;
 
 use mc_rcon::RconClient;
 use serde_json::Value;
@@ -16,7 +16,6 @@ fn stream_varint(i: i32) -> Vec<u8> {
         bytes.push((val | 0x80) as u8);
         val = val >> 7;
     }
-    // println!("{:?}", bytes);
 
     while let Some(last) = bytes.last()
         && *last == 0b1000_0000_u8
@@ -61,8 +60,9 @@ async fn read_varint(stream: &mut TcpStream) -> Result<i32, String> {
 }
 
 pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error> {
-    let mut stream =
-        TcpStream::connect(&format!("{server_address}:{server_port}")).await.map_err(|e| Error {
+    let mut stream = TcpStream::connect(&format!("{server_address}:{server_port}"))
+        .await
+        .map_err(|e| Error {
             cause: ErrorCause::SlpConn,
             reason: e.to_string(),
         })?;
@@ -104,10 +104,13 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
         reason: e.to_string(),
     })? as usize; // json response size
     let mut res_json_buffer = vec![0_u8; res_json_size].into_boxed_slice();
-    stream.read_exact(&mut res_json_buffer).await.map_err(|e| Error {
-        cause: ErrorCause::SlpResReadBuf,
-        reason: e.to_string(),
-    })?;
+    stream
+        .read_exact(&mut res_json_buffer)
+        .await
+        .map_err(|e| Error {
+            cause: ErrorCause::SlpResReadBuf,
+            reason: e.to_string(),
+        })?;
     if res_json_buffer.is_empty() {
         eprintln!("Received empty response from server!");
         return Err(Error {
@@ -121,7 +124,11 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
     })?;
     let res_json: Value = serde_json::from_str(&res_json_str).map_err(|e| Error {
         cause: ErrorCause::SlpResDeserialize,
-        reason: format!("Error parsing response JSON: {}\nOriginal JSON: {}", e.to_string(), res_json_str),
+        reason: format!(
+            "Error parsing response JSON: {}\nOriginal JSON: {}",
+            e.to_string(),
+            res_json_str
+        ),
     })?;
 
     Ok(res_json)
@@ -178,7 +185,7 @@ pub async fn fetch_player_list(
     rcon_port: u16,
     rcon_password: &str,
 ) -> Result<Vec<String>, Error> {
-    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?; 
+    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?;
 
     // let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?;
     // match result {

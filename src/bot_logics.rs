@@ -53,10 +53,10 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
         server_data.set_online(is_server_online);
         embeds_to_return.push(match is_server_online {
             true => CreateEmbed::default()
-                .title("✅ The server is back online!")
+                .title("✅  The server is back online!")
                 .colour(Colour::DARK_GREEN),
             false => CreateEmbed::default()
-                .title("❌ The server is offline...")
+                .title("❌  The server is offline...")
                 .colour(Colour::DARK_RED),
         });
     } else if is_server_online
@@ -137,14 +137,14 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
                     .delete_message(bot_ctx, old_status_msg_id)
                     .await;
             }
-        }, 
+        },
         async {
             ChannelId::new(server_data.status_channel_id)
                 .send_message(bot_ctx, CreateMessage::new().embeds(embeds_to_return))
                 .await
         }
-    ); 
-    
+    );
+
     // send new status message
     let currently_online_players = server_data
         .player_data
@@ -189,7 +189,7 @@ async fn new_bot_pinger_logic(bot_ctx: Context) {
         }
         let mut server_datas = server_datas_result.unwrap();
         for (_, server_data) in server_datas.iter_mut() {
-            let ping_result = server_pinger_logic(&bot_ctx, server_data).await; 
+            let ping_result = server_pinger_logic(&bot_ctx, server_data).await;
             let Err(why) = ping_result else { continue };
 
             let (new_error_msg_option, _, _) = tokio::join!(
@@ -199,25 +199,27 @@ async fn new_bot_pinger_logic(bot_ctx: Context) {
                         .await
                         .inspect_err(|e| eprintln!("{:?}", e))
                         .ok()
-                }, 
+                },
                 // let's bomb the dev w/ error messages
                 async {
                     ChannelId::new(1490505975315042304)
                         .send_message(&bot_ctx, CreateMessage::new().embed(why.get_embed()))
                         .await
                         .inspect_err(|e| eprintln!("{:?}", e))
-                }, 
+                },
                 async {
                     if let Some(last_error_msg_id) = server_data.last_error_msg_id {
                         let _ = ChannelId::new(server_data.status_channel_id)
                             .delete_message(&bot_ctx, last_error_msg_id)
                             .await;
                     }
-                }, 
-            ); 
-            
+                },
+            );
+
             server_data.last_error_msg_id = new_error_msg_option.map(|msg| msg.id);
-            server_data.save().unwrap_or_else(|e| eprintln!("Failed to save server data after ping error: {}", e));
+            server_data.save().unwrap_or_else(|e| {
+                eprintln!("Failed to save server data after ping error: {}", e)
+            });
         }
 
         sleep(Duration::from_secs(PING_INTERVAL_SECS)).await;
