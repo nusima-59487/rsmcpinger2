@@ -1,3 +1,4 @@
+use crate::MC_SKIN_BASE_URL;
 use crate::err::ErrorCause;
 use crate::{
     PING_INTERVAL_SECS, SERVER_DATA_ROOT_DIR,
@@ -5,8 +6,8 @@ use crate::{
     err::Error,
 };
 use poise::serenity_prelude::{
-    ChannelId, Colour, Context, CreateEmbed, CreateMessage, EventHandler, MessageFlags, Ready,
-    async_trait,
+    ChannelId, Colour, Context, CreateEmbed, CreateEmbedAuthor, CreateMessage, EventHandler,
+    MessageFlags, Ready, async_trait,
 };
 use std::sync::Mutex;
 use std::{collections::HashMap, time::Duration};
@@ -79,43 +80,51 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
             .cloned()
             .collect();
 
-        for player in left_players {
-            let escaped_player_name = escape_player_name(player);
+        for player_name in left_players {
+            let escaped_player_name = escape_player_name(player_name);
+            let embed_name = format!(
+                "{} left the server ({})",
+                escaped_player_name, new_online_players_count
+            );
             // update embeds
             embeds_to_return.push(
                 CreateEmbed::default()
-                    .title(format!(
-                        "➖  **{}** left the server *({})*",
-                        escaped_player_name, new_online_players_count
-                    ))
+                    .author(
+                        CreateEmbedAuthor::new(embed_name)
+                            .icon_url(MC_SKIN_BASE_URL.to_owned() + &player_name),
+                    )
                     .colour(Colour::ORANGE),
             );
             // insert player data to update online status later
             let mut player_data = server_data
-                .get_player_data(player)
+                .get_player_data(player_name)
                 .map(|data| data.clone())
                 .unwrap_or_default();
             player_data.set_online(false);
-            players_data_to_update.insert(player.to_string(), player_data);
+            players_data_to_update.insert(player_name.to_string(), player_data);
         }
-        for player in joined_players {
-            let escaped_player_name = escape_player_name(&player);
+        for player_name in joined_players {
+            let escaped_player_name = escape_player_name(&player_name);
+            let embed_name = format!(
+                "{} joined the server ({})",
+                escaped_player_name, new_online_players_count
+            );
             // update embeds
             embeds_to_return.push(
                 CreateEmbed::default()
-                    .title(format!(
-                        "➕  **{}** joined the server *({})*",
-                        escaped_player_name, new_online_players_count
-                    ))
+                    .author(
+                        CreateEmbedAuthor::new(embed_name)
+                            .icon_url(MC_SKIN_BASE_URL.to_owned() + &player_name),
+                    )
                     .colour(Colour::BLUE),
             );
             // insert player data to update online status later
             let mut player_data = server_data
-                .get_player_data(&player)
+                .get_player_data(&player_name)
                 .map(|data| data.clone())
                 .unwrap_or_default();
             player_data.set_online(true);
-            players_data_to_update.insert(player.to_string(), player_data);
+            players_data_to_update.insert(player_name.to_string(), player_data);
         }
 
         // update player data online status
