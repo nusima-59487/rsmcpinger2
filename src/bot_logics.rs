@@ -13,20 +13,6 @@ use std::sync::Mutex;
 use std::{collections::HashMap, time::Duration};
 use tokio::time::sleep;
 
-/// i don't have an utils file so im putting it here
-fn escape_player_name(player_name: &String) -> String {
-    player_name
-        .chars()
-        .map(|c| {
-            if c.is_ascii_punctuation() {
-                format!("\\{}", c)
-            } else {
-                c.to_string()
-            }
-        })
-        .collect::<String>()
-}
-
 async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) -> Result<(), Error> {
     let mut embeds_to_return: Vec<CreateEmbed> = vec![];
 
@@ -81,10 +67,9 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
             .collect();
 
         for player_name in left_players {
-            let escaped_player_name = escape_player_name(player_name);
             let embed_name = format!(
                 "{} left the server ({})",
-                escaped_player_name, new_online_players_count
+                player_name, new_online_players_count
             );
             // update embeds
             embeds_to_return.push(
@@ -104,10 +89,9 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
             players_data_to_update.insert(player_name.to_string(), player_data);
         }
         for player_name in joined_players {
-            let escaped_player_name = escape_player_name(&player_name);
             let embed_name = format!(
                 "{} joined the server ({})",
-                escaped_player_name, new_online_players_count
+                player_name, new_online_players_count
             );
             // update embeds
             embeds_to_return.push(
