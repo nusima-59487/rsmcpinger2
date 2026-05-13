@@ -6,8 +6,7 @@ use crate::{
     err::Error,
 };
 use poise::serenity_prelude::{
-    ChannelId, Colour, Context, CreateEmbed, CreateEmbedAuthor, CreateMessage, EventHandler,
-    MessageFlags, Ready, async_trait,
+    ChannelId, Colour, Context, CreateEmbed, CreateEmbedAuthor, CreateMessage, EventHandler, MessageFlags, Ready, Timestamp, async_trait
 };
 use std::sync::Mutex;
 use std::{collections::HashMap, time::Duration};
@@ -41,10 +40,12 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
         embeds_to_return.push(match is_server_online {
             true => CreateEmbed::default()
                 .title("✅  The server is back online!")
-                .colour(Colour::DARK_GREEN),
+                .colour(Colour::DARK_GREEN)
+                .timestamp(Timestamp::now()),
             false => CreateEmbed::default()
                 .title("❌  The server is offline...")
-                .colour(Colour::DARK_RED),
+                .colour(Colour::DARK_RED)
+                .timestamp(Timestamp::now()),
         });
     } else if is_server_online
         && let Some(new_online_players_count) = new_online_players_count
@@ -162,7 +163,7 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
                             new_online_players_count.map_or(-1, |count| count as i64)
                         ))
                         .description(status_msg_desc)
-                        .colour(Colour::DARK_GREY),
+                        .colour(Colour::FADED_PURPLE),
                 ),
         )
         .await;
