@@ -59,12 +59,10 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
         let left_players: Vec<_> = old_online_players
             .iter()
             .filter(|x| !new_online_players.contains(x) && ***x != String::from(""))
-            .cloned()
             .collect();
         let joined_players: Vec<_> = new_online_players
             .iter()
-            .filter(|x| !old_online_players.contains(x) && ***x != String::from(""))
-            .cloned()
+            .filter(|x| !old_online_players.contains(x) && **x != String::from(""))
             .collect();
 
         for player_name in left_players {
