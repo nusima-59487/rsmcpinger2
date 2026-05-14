@@ -130,10 +130,10 @@ impl ServerData {
         {
             Ok(result) => result,
             Err(_) => {
-                eprintln!("RCON command timed out!");
+                eprintln!("SLP timed out!");
                 return Err(Error {
-                    cause: ErrorCause::RconCommand,
-                    reason: "RCON command timed out".into(),
+                    cause: ErrorCause::SlpConn,
+                    reason: "SLP timed out".into(),
                 });
             }
         };
