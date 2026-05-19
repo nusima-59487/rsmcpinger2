@@ -19,6 +19,7 @@ pub enum ErrorCause {
     ServerDataRead,
     ServerDataDeserialize,
     ReadRootDir,
+    DateTimeParse, 
 }
 
 impl ErrorCause {
@@ -40,6 +41,7 @@ impl ErrorCause {
             ErrorCause::ServerDataRead => String::from("Failed Retrieving Server Data"),
             ErrorCause::ServerDataDeserialize => String::from("Failed Deserializing Server Data"),
             ErrorCause::ReadRootDir => String::from("Failed Retrieving Server Datas"),
+            ErrorCause::DateTimeParse => String::from("Failed Parsing Datetime"), 
         }
     }
 }
