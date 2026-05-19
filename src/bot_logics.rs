@@ -84,7 +84,9 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
                 .get_player_data(player_name)
                 .map(|data| data.clone())
                 .unwrap_or_default();
-            player_data.set_online(false);
+            if let Some(player_online_record) = player_data.set_offline() {
+                player_data.online_record.push(player_online_record);
+            }
             players_data_to_update.insert(player_name.to_string(), player_data);
         }
         for player_name in joined_players {
@@ -106,7 +108,7 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
                 .get_player_data(&player_name)
                 .map(|data| data.clone())
                 .unwrap_or_default();
-            player_data.set_online(true);
+            player_data.set_online();
             players_data_to_update.insert(player_name.to_string(), player_data);
         }
 
