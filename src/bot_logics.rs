@@ -6,7 +6,8 @@ use crate::{
     err::Error,
 };
 use poise::serenity_prelude::{
-    ChannelId, Colour, Context, CreateEmbed, CreateEmbedAuthor, CreateMessage, EventHandler, MessageFlags, Ready, Timestamp, async_trait
+    ChannelId, Colour, Context, CreateEmbed, CreateEmbedAuthor, CreateMessage, EventHandler,
+    MessageFlags, Ready, Timestamp, async_trait,
 };
 use std::sync::Mutex;
 use std::{collections::HashMap, time::Duration};

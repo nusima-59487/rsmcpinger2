@@ -140,6 +140,7 @@ pub async fn mcrcon(
     rcon_password: &str,
     command: String,
 ) -> Result<String, Error> {
+    // TODO: change this to actual async code
     async fn mcrcon_inner(
         server_address: &str,
         rcon_port: u16,
@@ -185,12 +186,11 @@ pub async fn fetch_player_list(
     rcon_port: u16,
     rcon_password: &str,
 ) -> Result<Vec<String>, Error> {
-    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await
+    // TODO: catch common errors and return a more user friendly page
+    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string())
+        .await
         .inspect_err(|e| eprintln!("Failed RCON Attempt: {e:?}"))?;
 
-    // let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string()).await?;
-    // match result {
-    //     Ok(msg) => {
     let players_str: &str = &result
         .trim_end_matches("\x1b\x5b\x30\x6d")
         .split(": ")
@@ -201,13 +201,4 @@ pub async fn fetch_player_list(
     }
     let players: Vec<String> = players_str.split(", ").map(|s| s.trim().into()).collect();
     return Ok(players);
-    //     }
-    //     Err((code, msg)) => {
-    //         let toreturn = match code {
-    //             Some(t) => format!("**An error occured: (Status code {})\n {}", t, msg),
-    //             None => format!("**An error occured:\n {}", msg),
-    //         };
-    //         return Err(Error { reason: toreturn });
-    //     }
-    // }
 }

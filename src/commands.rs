@@ -1,12 +1,17 @@
-use crate::{SERVER_DATA_ROOT_DIR, data_handler::ServerData, err::{Error, ErrorCause}};
+use crate::{
+    SERVER_DATA_ROOT_DIR,
+    data_handler::ServerData,
+    err::{Error, ErrorCause},
+};
 use chrono::Utc;
 use poise::{
     CreateReply,
-    serenity_prelude::{Colour, ComponentInteractionCollector, CreateActionRow, CreateButton, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage},
+    serenity_prelude::{
+        Colour, ComponentInteractionCollector, CreateActionRow, CreateButton, CreateEmbed,
+        CreateInteractionResponse, CreateInteractionResponseMessage,
+    },
 };
-use std::{
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 type CommandError = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, crate::Data, CommandError>;
@@ -47,7 +52,9 @@ pub async fn setup(
     ctx: Context<'_>,
     #[description = "Minecraft server address"] server_address: String,
     #[description = "Minecraft server port (defaults to 25565)"] server_port: Option<u16>,
-    #[description = "[UNUSED FOR NOW] Minecraft RCON port (defaults to 25575)"] rcon_port: Option<u16>,
+    #[description = "[UNUSED FOR NOW] Minecraft RCON port (defaults to 25575)"] rcon_port: Option<
+        u16,
+    >,
     #[description = "Minecraft RCON password"] rcon_password: String,
 ) -> Result<(), CommandError> {
     let Some(guild_id) = ctx.guild_id() else {
@@ -77,29 +84,26 @@ pub async fn setup(
     };
 }
 
-
 /// don't use it yet
 #[poise::command(
-    slash_command, 
-    prefix_command, 
+    slash_command,
+    prefix_command,
     guild_only,
-    default_member_permissions = "ADMINISTRATOR")]
-pub async fn remove_player_records(
-    ctx: Context<'_>
-) -> Result<(), CommandError> {
-    return Ok(()); 
+    default_member_permissions = "ADMINISTRATOR"
+)]
+pub async fn remove_player_records(ctx: Context<'_>) -> Result<(), CommandError> {
+    return Ok(());
 }
 
 /// don't use it yet
 #[poise::command(
-    slash_command, 
-    prefix_command, 
+    slash_command,
+    prefix_command,
     guild_only,
-    default_member_permissions = "ADMINISTRATOR")]
-pub async fn remove_server_data(
-    ctx: Context<'_>
-) -> Result<(), CommandError> {
-    return Ok(()); 
+    default_member_permissions = "ADMINISTRATOR"
+)]
+pub async fn remove_server_data(ctx: Context<'_>) -> Result<(), CommandError> {
+    return Ok(());
 }
 
 /// Check online players
@@ -241,31 +245,37 @@ pub async fn playtime_player(
         return Ok(());
     };
 
-    let mut online_records = player_data.online_record
+    let mut online_records = player_data
+        .online_record
         .clone()
-        .into_iter().map(|record| record.as_string())
-        .collect::<Vec<_>>(); 
+        .into_iter()
+        .map(|record| record.as_string())
+        .collect::<Vec<_>>();
     if player_data.is_online {
-        online_records.insert(0, format!("- **<t:{}:s>**\n> Currently online!", 
-            chrono::DateTime::parse_from_rfc3339(&player_data.last_seen)
-                .map(|e| e.with_timezone(&Utc).timestamp())
-                .map_err(|e| Error {
-                    cause: ErrorCause::DateTimeParse, 
-                    reason: e.to_string(),
-                })
-                // ?,
-                .unwrap_or_default(),
-        )); 
+        online_records.insert(
+            0,
+            format!(
+                "- **<t:{}:s>**\n> Currently online!",
+                chrono::DateTime::parse_from_rfc3339(&player_data.last_seen)
+                    .map(|e| e.with_timezone(&Utc).timestamp())
+                    .map_err(|e| Error {
+                        cause: ErrorCause::DateTimeParse,
+                        reason: e.to_string(),
+                    })
+                    // ?,
+                    .unwrap_or_default(),
+            ),
+        );
     }
-        // .insert(0, element)
+    // .insert(0, element)
 
-    let total_page_count = online_records.len().div_ceil(5).max(1);  
-    
+    let total_page_count = online_records.len().div_ceil(5).max(1);
+
     let ctx_id = ctx.id();
     let prev_button_id = format!("{}prev", ctx_id);
     let next_button_id = format!("{}next", ctx_id);
 
-    let mut current_page_idx = 0; 
+    let mut current_page_idx = 0;
 
     let reply = {
         let components = CreateActionRow::Buttons(vec![
@@ -274,7 +284,12 @@ pub async fn playtime_player(
         ]);
 
         CreateReply::default()
-            .embed(generate_playtime_player_embed(&player_name, player_data.get_current_online_secs(), &online_records, current_page_idx))
+            .embed(generate_playtime_player_embed(
+                &player_name,
+                player_data.get_current_online_secs(),
+                &online_records,
+                current_page_idx,
+            ))
             .components(vec![components])
     };
     ctx.send(reply).await?;
@@ -294,7 +309,9 @@ pub async fn playtime_player(
                 current_page_idx = 0;
             }
         } else if press.data.custom_id == prev_button_id {
-            current_page_idx = current_page_idx.checked_sub(1).unwrap_or(total_page_count - 1);
+            current_page_idx = current_page_idx
+                .checked_sub(1)
+                .unwrap_or(total_page_count - 1);
         } else {
             // This is an unrelated button interaction
             continue;
@@ -305,35 +322,56 @@ pub async fn playtime_player(
             .create_response(
                 ctx.serenity_context(),
                 CreateInteractionResponse::UpdateMessage(
-                    CreateInteractionResponseMessage::new()
-                        .embed(generate_playtime_player_embed(&player_name, player_data.get_current_online_secs(), &online_records, current_page_idx)),
+                    CreateInteractionResponseMessage::new().embed(generate_playtime_player_embed(
+                        &player_name,
+                        player_data.get_current_online_secs(),
+                        &online_records,
+                        current_page_idx,
+                    )),
                 ),
             )
             .await?;
     }
 
-    return Ok(()); 
+    return Ok(());
 }
 
-
-fn generate_playtime_player_embed (player_name: &str, total_playtime_secs: u32, online_record_descs: &Vec<String>, page_idx: usize) -> CreateEmbed {
-    let online_records = online_record_descs
-        .chunks(5).collect::<Vec<_>>();
+fn generate_playtime_player_embed(
+    player_name: &str,
+    total_playtime_secs: u32,
+    online_record_descs: &Vec<String>,
+    page_idx: usize,
+) -> CreateEmbed {
+    let online_records = online_record_descs.chunks(5).collect::<Vec<_>>();
     let pages_count = online_records.len().max(1);
     let page_idx = page_idx.min(pages_count - 1);
-    // let page_online_records = online_records[page_idx].join("\n"); 
-    let page_online_records = online_records.get(page_idx).map(|records| records.join("\n")).unwrap_or("No playtime records found!".into());
+    // let page_online_records = online_records[page_idx].join("\n");
+    let page_online_records = online_records
+        .get(page_idx)
+        .map(|records| records.join("\n"))
+        .unwrap_or("No playtime records found!".into());
 
     let embed = CreateEmbed::new()
         .title(format!("⌛  Playtime Info on {}", player_name))
-        .colour(Colour::FABLED_PINK); 
+        .colour(Colour::FABLED_PINK);
     let embed = if page_idx == 0 {
-        embed.field("Total Playtime", format!("```{}h {}m {}s```", 
-            total_playtime_secs / 3600,
-            (total_playtime_secs % 3600) / 60,
-            total_playtime_secs % 60,
-        ), false)
-    } else { embed }; 
-    let embed = embed.field(format!("Playtime History ({}/{})", page_idx + 1, pages_count), page_online_records, false); 
-    return embed; 
+        embed.field(
+            "Total Playtime",
+            format!(
+                "```{}h {}m {}s```",
+                total_playtime_secs / 3600,
+                (total_playtime_secs % 3600) / 60,
+                total_playtime_secs % 60,
+            ),
+            false,
+        )
+    } else {
+        embed
+    };
+    let embed = embed.field(
+        format!("Playtime History ({}/{})", page_idx + 1, pages_count),
+        page_online_records,
+        false,
+    );
+    return embed;
 }

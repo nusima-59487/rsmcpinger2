@@ -21,7 +21,7 @@ pub struct PlayerData {
     pub is_online: bool,
     pub total_online_seconds: u32,
     #[serde(default)]
-    pub online_record: Vec<PlayerOnlineRecord>, 
+    pub online_record: Vec<PlayerOnlineRecord>,
 }
 
 impl PlayerData {
@@ -43,24 +43,24 @@ impl PlayerData {
         return self.total_online_seconds + self.secs_since_player_join().unwrap_or(0);
     }
 
-    pub fn set_online (&mut self) {
+    pub fn set_online(&mut self) {
         if self.is_online {
-            return; 
+            return;
         }
         self.last_seen = Utc::now().to_rfc3339();
         self.is_online = true;
     }
 
-    pub fn set_offline (&mut self) -> Option<PlayerOnlineRecord> {
+    pub fn set_offline(&mut self) -> Option<PlayerOnlineRecord> {
         if self.is_online == false {
-            return None; 
+            return None;
         }
         self.total_online_seconds = self.get_current_online_secs();
-        self.is_online = false; 
+        self.is_online = false;
         return Some(PlayerOnlineRecord::new_with_duration_secs(
-            Utc::now(), 
-            self.total_online_seconds
-        )); 
+            Utc::now(),
+            self.total_online_seconds,
+        ));
     }
 }
 
@@ -78,30 +78,31 @@ impl Default for PlayerData {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlayerOnlineRecord {
     /// rfc3339 timestamp
-    pub join_time: String, 
-    pub duration_secs: u32, 
+    pub join_time: String,
+    pub duration_secs: u32,
 }
 
 impl PlayerOnlineRecord {
-    pub fn new (join_time: DateTime<Utc>, leave_time: DateTime<Utc>) -> Self {
-        let duration = leave_time - join_time; 
+    pub fn new(join_time: DateTime<Utc>, leave_time: DateTime<Utc>) -> Self {
+        let duration = leave_time - join_time;
         Self {
-            join_time: join_time.to_rfc3339(), 
-            duration_secs: duration.num_seconds().abs() as u32
+            join_time: join_time.to_rfc3339(),
+            duration_secs: duration.num_seconds().abs() as u32,
         }
     }
-    pub fn new_with_duration_secs (join_time: DateTime<Utc>, duration_secs: u32) -> Self {
+    pub fn new_with_duration_secs(join_time: DateTime<Utc>, duration_secs: u32) -> Self {
         Self {
-            join_time: join_time.to_rfc3339(), 
-            duration_secs
+            join_time: join_time.to_rfc3339(),
+            duration_secs,
         }
     }
-    pub fn as_string (self) -> String {
-        format!("- **<t:{}:s>**\n> Played for `{}h {}m {}s`", 
+    pub fn as_string(self) -> String {
+        format!(
+            "- **<t:{}:s>**\n> Played for `{}h {}m {}s`",
             DateTime::parse_from_rfc3339(&self.join_time)
                 .map(|e| e.with_timezone(&Utc).timestamp())
                 .map_err(|e| Error {
-                    cause: ErrorCause::DateTimeParse, 
+                    cause: ErrorCause::DateTimeParse,
                     reason: e.to_string(),
                 })
                 // ?,
@@ -112,10 +113,6 @@ impl PlayerOnlineRecord {
         )
     }
 }
-
-
-
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerData {
@@ -187,7 +184,6 @@ impl ServerData {
         {
             Ok(result) => result,
             Err(_) => {
-                eprintln!("SLP timed out!");
                 return Err(Error {
                     cause: ErrorCause::SlpConn,
                     reason: "SLP timed out".into(),
@@ -217,9 +213,9 @@ impl ServerData {
                 .map(|data| data.clone())
                 .unwrap_or_default();
             if online_player_list.contains(&player) {
-                player_data.set_online(); 
+                player_data.set_online();
             } else {
-                player_data.set_offline(); 
+                player_data.set_offline();
             }
             self.set_player_data(&player, player_data);
         }

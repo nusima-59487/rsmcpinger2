@@ -4,27 +4,27 @@ use poise::serenity_prelude::{Colour, CreateEmbed};
 
 #[derive(Debug, Clone)]
 pub enum ErrorCause {
-    SlpConn, 
-    SlpHandshake, 
-    SlpRequest, 
-    SlpResponse, 
-    SlpResReadBuf, 
-    SlpResReadUtf, 
-    SlpResDeserialize, 
-    RconHandshake, 
-    RconAuth, 
-    RconCommand, 
+    SlpConn,
+    SlpHandshake,
+    SlpRequest,
+    SlpResponse,
+    SlpResReadBuf,
+    SlpResReadUtf,
+    SlpResDeserialize,
+    RconHandshake,
+    RconAuth,
+    RconCommand,
     ServerDataSerialize,
-    ServerDataSave, 
+    ServerDataSave,
     ServerDataRead,
     ServerDataDeserialize,
     ReadRootDir,
-    DateTimeParse, 
+    DateTimeParse,
 }
 
 impl ErrorCause {
     /// hihi
-    pub fn to_string (&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
             ErrorCause::SlpConn => String::from("Server Connecton Failed"),
             ErrorCause::SlpHandshake => String::from("Server Handshake Failed"),
@@ -41,16 +41,15 @@ impl ErrorCause {
             ErrorCause::ServerDataRead => String::from("Failed Retrieving Server Data"),
             ErrorCause::ServerDataDeserialize => String::from("Failed Deserializing Server Data"),
             ErrorCause::ReadRootDir => String::from("Failed Retrieving Server Datas"),
-            ErrorCause::DateTimeParse => String::from("Failed Parsing Datetime"), 
+            ErrorCause::DateTimeParse => String::from("Failed Parsing Datetime"),
         }
     }
 }
 
-
 /// own error type
 #[derive(Debug, Clone)]
 pub struct Error {
-    pub cause: ErrorCause, 
+    pub cause: ErrorCause,
     pub reason: String,
 }
 
@@ -63,8 +62,8 @@ impl std::fmt::Display for Error {
 }
 
 impl Error {
-    pub fn get_embed (&self) -> CreateEmbed {
-        let desc = self.cause.to_string(); 
+    pub fn get_embed(&self) -> CreateEmbed {
+        let desc = self.cause.to_string();
         CreateEmbed::new()
             .colour(Colour::DARK_RED)
             .title("Oops! An error occured")
