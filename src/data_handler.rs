@@ -1,12 +1,11 @@
 use std::{
-    collections::HashMap,
-    fs::{read_dir, read_to_string},
-    path::Path,
+    collections::HashMap, fs::{read_dir, read_to_string}, path::Path, time::Duration,
 };
 
 use chrono::{DateTime, Utc};
 use poise::serenity_prelude::MessageId;
 use serde::{Deserialize, Serialize};
+use tokio::time::timeout;
 
 use crate::{
     RCON_TIME_LIMIT_SECS,
@@ -191,14 +190,25 @@ impl ServerData {
             }
         };
     }
+    /// with timeout of 5 seconds
     pub async fn mcrcon(&self, command: String) -> Result<String, Error> {
-        pinger::mcrcon(
-            &self.server_address,
-            self.rcon_port,
-            &self.rcon_password,
-            command,
+        return match timeout(
+            Duration::from_secs(RCON_TIME_LIMIT_SECS),
+            pinger::mcrcon(
+                &self.server_address,
+                self.rcon_port,
+                &self.rcon_password,
+                command,
+            )
         )
         .await
+        {
+            Ok(result) => result,
+            Err(_) => Err(Error {
+                cause: ErrorCause::RconHandshake,
+                reason: "RCON Connection Timed Out".into(),
+            }),
+        };
     }
 
     /// doesn't save for you :)

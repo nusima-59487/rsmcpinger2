@@ -2,7 +2,6 @@ use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-use mc_rcon::RconClient;
 use serde_json::Value;
 use tokio::time::timeout;
 
@@ -134,50 +133,80 @@ pub async fn ping(server_address: &str, server_port: u16) -> Result<Value, Error
     Ok(res_json)
 }
 
+async fn send_rcon_packet (
+    stream: &mut TcpStream, 
+    request_id: i32, 
+    request_type: i32, 
+    request_payload: &[u8]
+) -> Result<Box<[u8]>, String> {
+    let payload_length = (
+        size_of_val(&request_id) + 
+        size_of_val(&request_type) + 
+        size_of_val(request_payload) + 
+        2 // null bytes at end of packet
+    ) as i32; 
+
+    let mut req_buf: Vec<u8> = vec![]; 
+    req_buf.append(&mut payload_length.to_le_bytes().to_vec());
+    req_buf.append(&mut request_id.to_le_bytes().to_vec());
+    req_buf.append(&mut request_type.to_le_bytes().to_vec()); 
+    req_buf.append(&mut request_payload.to_vec());
+    req_buf.append(&mut vec![0x00, 0x00]);
+
+
+    if let Err(why) = stream.write_all(&req_buf).await {
+        return Err(format!("Failed to send request: {}", why));
+    }
+            
+    let mut res_size = [0u8; 4];
+    let Ok(_) = stream.read_exact(&mut res_size).await else {
+        return Err("Failed to read response size".into()); 
+    }; 
+    let res_size = i32::from_le_bytes(res_size) as usize; 
+    let mut res_buffer = vec![0u8; res_size].into_boxed_slice(); 
+
+    if let Err(why) = stream.read_exact(&mut res_buffer).await {
+        return Err(format!("Failed to read response: {}", why));
+    }; 
+
+    return Ok(res_buffer); 
+}
+
 pub async fn mcrcon(
     server_address: &str,
     rcon_port: u16,
     rcon_password: &str,
     command: String,
 ) -> Result<String, Error> {
-    // TODO: change this to actual async code
-    async fn mcrcon_inner(
-        server_address: &str,
-        rcon_port: u16,
-        rcon_password: &str,
-        command: String,
-    ) -> Result<String, Error> {
-        let client =
-            RconClient::connect(format!("{server_address}:{rcon_port}")).map_err(|e| Error {
-                cause: ErrorCause::RconHandshake,
-                reason: e.to_string(),
-            })?;
-
-        client.log_in(rcon_password).map_err(|e| Error {
-            cause: ErrorCause::RconAuth,
-            reason: format!("{e:?}"),
-        })?;
-
-        let result = client.send_command(&command).map_err(|e| Error {
-            cause: ErrorCause::RconCommand,
-            reason: format!("{e:?}"),
-        })?;
-
-        return Ok(result);
-    }
-
-    return match timeout(
-        Duration::from_secs(RCON_TIME_LIMIT_SECS),
-        mcrcon_inner(server_address, rcon_port, rcon_password, command),
-    )
-    .await
-    {
-        Ok(result) => result,
-        Err(_) => Err(Error {
+    let mut stream = TcpStream::connect(format!("{server_address}:{rcon_port}"))
+        .await
+        .map_err(|e| Error {
             cause: ErrorCause::RconHandshake,
-            reason: "RCON Connection Timed Out".into(),
-        }),
+            reason: e.to_string(),
+        })?; 
+
+    let request_id: i32 = 12345; 
+    // login
+    if let Err(why) = send_rcon_packet(&mut stream, request_id, 3, rcon_password.as_bytes()).await {
+        return Err(Error {
+            cause: ErrorCause::RconAuth,
+            reason: why,
+        }); 
     };
+
+    // send command
+    let response = send_rcon_packet(&mut stream, request_id, 2, command.as_bytes()).await
+        .map_err(|e| Error {
+            cause: ErrorCause::RconCommand, 
+            reason: e, 
+        })?;
+    let resposne_str = String::from_utf8((*response).to_vec())
+        .map_err(|e| Error {
+            cause: ErrorCause::RconCommand, 
+            reason: e.to_string(), 
+        })?;
+    
+    return Ok(resposne_str);
 }
 
 /// utilizing mcrcon
@@ -187,10 +216,20 @@ pub async fn fetch_player_list(
     rcon_password: &str,
 ) -> Result<Vec<String>, Error> {
     // TODO: catch common errors and return a more user friendly page
-    let result = mcrcon(server_address, rcon_port, rcon_password, "list".to_string())
-        .await
-        .inspect_err(|e| eprintln!("Failed RCON Attempt: {e:?}"))?;
+    // TODO: add a timeout to this function
 
+    let result = match timeout(
+        Duration::from_secs(RCON_TIME_LIMIT_SECS),
+        mcrcon(server_address, rcon_port, rcon_password, "list".to_string())
+    ).await {
+        Ok(result) => result,
+        Err(_) => Err(Error {
+            cause: ErrorCause::RconHandshake,
+            reason: "RCON Connection Timed Out".into(),
+        }),
+    }
+        .inspect_err(|e| eprintln!("Failed RCON Attempt: {e:?}"))?;
+        
     let players_str: &str = &result
         .trim_end_matches("\x1b\x5b\x30\x6d")
         .split(": ")
