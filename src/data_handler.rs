@@ -58,7 +58,7 @@ impl PlayerData {
         self.is_online = false;
         return Some(PlayerOnlineRecord::new_with_duration_secs(
             Utc::now(),
-            self.total_online_seconds,
+            self.secs_since_player_join().unwrap_or(0),
         ));
     }
 }
