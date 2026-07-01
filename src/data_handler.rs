@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap, fs::{read_dir, read_to_string}, path::Path, time::Duration,
+    collections::HashMap, fmt::Display, fs::{read_dir, read_to_string}, path::Path, time::Duration,
 };
 
 use chrono::{DateTime, Utc};
@@ -95,8 +95,11 @@ impl PlayerOnlineRecord {
             duration_secs,
         }
     }
-    pub fn as_string(self) -> String {
-        format!(
+}
+
+impl Display for PlayerOnlineRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, 
             "- **<t:{}:s>**\n> Played for `{}h {}m {}s`",
             DateTime::parse_from_rfc3339(&self.join_time)
                 .map(|e| e.with_timezone(&Utc).timestamp())

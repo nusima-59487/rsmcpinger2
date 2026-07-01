@@ -249,7 +249,7 @@ pub async fn playtime_player(
         .online_record
         .clone()
         .into_iter()
-        .map(|record| record.as_string())
+        .map(|record| record.to_string())
         .collect::<Vec<_>>();
     if player_data.is_online {
         online_records.insert(
