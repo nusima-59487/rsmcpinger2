@@ -255,7 +255,7 @@ pub async fn playtime_player(
         online_records.insert(
             0,
             format!(
-                "- **<t:{}:s>**\n> Currently online!",
+                "- **<t:{}:s>**\n> :green_circle: *Currently online!*",
                 chrono::DateTime::parse_from_rfc3339(&player_data.last_seen)
                     .map(|e| e.with_timezone(&Utc).timestamp())
                     .map_err(|e| Error {
@@ -369,7 +369,7 @@ fn generate_playtime_player_embed(
         embed
     };
     let embed = embed.field(
-        format!("Playtime History ({}/{})", page_idx + 1, pages_count),
+        format!("Playtime History (Page {} of {})", page_idx + 1, pages_count),
         page_online_records,
         false,
     );
