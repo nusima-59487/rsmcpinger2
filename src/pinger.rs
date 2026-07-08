@@ -138,7 +138,7 @@ async fn send_rcon_packet (
     request_id: i32, 
     request_type: i32, 
     request_payload: &[u8]
-) -> Result<Box<[u8]>, String> {
+) -> Result<Vec<u8>, String> {
     let payload_length = (
         size_of_val(&request_id) + 
         size_of_val(&request_type) + 
@@ -157,19 +157,32 @@ async fn send_rcon_packet (
     if let Err(why) = stream.write_all(&req_buf).await {
         return Err(format!("Failed to send request: {}", why));
     }
-            
+    
+    // resposne size
     let mut res_size = [0u8; 4];
     let Ok(_) = stream.read_exact(&mut res_size).await else {
         return Err("Failed to read response size".into()); 
     }; 
     let res_size = i32::from_le_bytes(res_size) as usize; 
-    let mut res_buffer = vec![0u8; res_size].into_boxed_slice(); 
 
+    // retrieve response
+    let mut res_buffer = vec![0u8; res_size].into_boxed_slice(); 
     if let Err(why) = stream.read_exact(&mut res_buffer).await {
         return Err(format!("Failed to read response: {}", why));
     }; 
 
-    return Ok(res_buffer); 
+    let mut res_vec = (*res_buffer).to_vec(); 
+    // remove first 4 bytes (response id)
+    let res_id: Vec<u8> = res_vec.drain(0..4).collect(); 
+    if i32::from_le_bytes(res_id.try_into().expect("??? response_vec length is not 4??")) == -1 {
+        // request failed
+        return Err("Auth error".into()); 
+    }
+
+    res_vec.drain(0..4); // packet type
+    res_vec.truncate(res_vec.len()-2);
+
+    return Ok(res_vec); 
 }
 
 pub async fn mcrcon(
@@ -200,11 +213,15 @@ pub async fn mcrcon(
             cause: ErrorCause::RconCommand, 
             reason: e, 
         })?;
-    let resposne_str = String::from_utf8((*response).to_vec())
+
+    println!("RCON Response: {:?}", response);
+    let resposne_str = String::from_utf8(response)
         .map_err(|e| Error {
             cause: ErrorCause::RconCommand, 
             reason: e.to_string(), 
         })?;
+
+    println!("RCON Response String: {:?}", resposne_str);
     
     return Ok(resposne_str);
 }
@@ -216,8 +233,6 @@ pub async fn fetch_player_list(
     rcon_password: &str,
 ) -> Result<Vec<String>, Error> {
     // TODO: catch common errors and return a more user friendly page
-    // TODO: add a timeout to this function
-
     let result = match timeout(
         Duration::from_secs(RCON_TIME_LIMIT_SECS),
         mcrcon(server_address, rcon_port, rcon_password, "list".to_string())
