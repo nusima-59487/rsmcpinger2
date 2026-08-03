@@ -153,6 +153,10 @@ impl ServerData {
             }
         }
     }
+    /// doesn't save for you
+    pub fn reset_all_player_data(&mut self) {
+        self.player_data.clear();
+    }
 
     /// using mcrcon
     pub async fn fetch_online_players_list(&self) -> Result<Vec<String>, Error> {
@@ -308,6 +312,7 @@ pub fn get_all_server_data(root_dir: &str) -> Result<HashMap<u64, ServerData>, E
         if let Some(filename) = filename.to_str() {
             let server_data_result = ServerData::read_from_path(&format!("{root_dir}/{filename}"));
             if let Err(why) = server_data_result {
+                // TODO: send error message to channel
                 eprintln!(
                     "ServerData skipped due to error ({}): {} ({})",
                     filename,

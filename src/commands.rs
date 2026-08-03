@@ -11,7 +11,7 @@ use poise::{
         CreateInteractionResponse, CreateInteractionResponseMessage,
     },
 };
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 type CommandError = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, crate::Data, CommandError>;
@@ -71,20 +71,22 @@ pub async fn setup(
         ctx.channel_id().get(),
         guild_id.get(),
     );
-    match server_data.save() {
+    let msg_reply_handle = match server_data.save() {
         Ok(_) => {
-            ctx.say("Successfully set up!").await?;
-            return Ok(());
+            ctx.say("Successfully set up!").await?
+            
         }
         Err(why) => {
-            ctx.send(CreateReply::default().embed(why.get_embed()))
-                .await?;
-            return Ok(());
+            ctx.send(CreateReply::default().embed(why.get_embed())).await?
         }
     };
+    tokio::time::sleep(Duration::from_secs(5)).await; 
+    msg_reply_handle.delete(ctx).await?; 
+    
+    return Ok(()); 
 }
 
-/// don't use it yet
+/// [Admin] Removes all players' online record seen in /playtime player
 #[poise::command(
     slash_command,
     prefix_command,
@@ -92,10 +94,40 @@ pub async fn setup(
     default_member_permissions = "ADMINISTRATOR"
 )]
 pub async fn remove_player_records(ctx: Context<'_>) -> Result<(), CommandError> {
+    ctx.defer().await?;
+
+    let Some(guild_id) = ctx.guild_id() else {
+        ctx.say("HOW DARE YOU USE THIS COMMAND OUTSIDE OF A SERVER >:(")
+            .await?;
+        return Ok(());
+    };
+    let guild_id = guild_id.get();
+    let server_data_result = ServerData::read(SERVER_DATA_ROOT_DIR, guild_id);
+    if let Err(why) = server_data_result {
+        if let ErrorCause::ServerDataRead = why.cause {
+            ctx.say("Error: Server haven't set up yet!").await?;
+        } else {
+            ctx.send(CreateReply::default().embed(why.get_embed()))
+                .await?;
+        }
+        return Ok(());
+    }
+    let mut server_data = server_data_result.unwrap();
+
+    server_data.reset_all_player_data();
+
+    match server_data.save() {
+        Ok(_) => {
+            ctx.say("All player data erased!").await?; 
+        }, 
+        Err(why) => {
+            ctx.send(CreateReply::default().embed(why.get_embed())).await?; 
+        }
+    }
     return Ok(());
 }
 
-/// don't use it yet
+/// [Admin] removes minecraft server data for this channel
 #[poise::command(
     slash_command,
     prefix_command,
@@ -103,6 +135,27 @@ pub async fn remove_player_records(ctx: Context<'_>) -> Result<(), CommandError>
     default_member_permissions = "ADMINISTRATOR"
 )]
 pub async fn remove_server_data(ctx: Context<'_>) -> Result<(), CommandError> {
+    ctx.defer().await?;
+
+    let Some(guild_id) = ctx.guild_id() else {
+        ctx.say("HOW DARE YOU USE THIS COMMAND OUTSIDE OF A SERVER >:(")
+            .await?;
+        return Ok(());
+    };
+    let filename = format!("{SERVER_DATA_ROOT_DIR}/{guild_id}.json");
+
+    match std::fs::remove_file(filename){
+        Ok(_) => {
+            ctx.say("Server data deleted!").await?; 
+        }, 
+        Err(why) => {
+            let embed = Error {
+                cause: ErrorCause::ServerDataDel, 
+                reason: why.to_string()
+            }.get_embed(); 
+            ctx.send(CreateReply::default().embed(embed)).await?; 
+        }
+    };
     return Ok(());
 }
 

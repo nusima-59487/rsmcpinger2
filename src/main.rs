@@ -24,7 +24,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![ping(), playerlist(), setup(), playtime()],
+            commands: vec![ping(), playerlist(), setup(), playtime(), remove_player_records(), remove_server_data()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
