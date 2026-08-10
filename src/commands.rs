@@ -395,13 +395,23 @@ fn generate_playtime_player_embed(
     online_record_descs: &Vec<String>,
     page_idx: usize,
 ) -> CreateEmbed {
-    let online_records = online_record_descs.chunks(5).collect::<Vec<_>>();
+    let online_record_descs: Vec<&str> = online_record_descs
+        .into_iter()
+        .rev()
+        .map(|e| e.as_str())
+        .collect(); 
+    let online_records = online_record_descs.chunks(5)
+        .collect::<Vec<_>>();
     let pages_count = online_records.len().max(1);
     let page_idx = page_idx.min(pages_count - 1);
     // let page_online_records = online_records[page_idx].join("\n");
-    let page_online_records = online_records
+    let page_online_records: String = online_records
         .get(page_idx)
-        .map(|records| records.join("\n"))
+        .map(|records| (*records).iter()
+            .copied()
+            .collect::<Vec<&str>>()
+            .join("\n")
+        )
         .unwrap_or("No playtime records found!".into());
 
     let embed = CreateEmbed::new()
