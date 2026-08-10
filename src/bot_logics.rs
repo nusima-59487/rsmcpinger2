@@ -86,6 +86,7 @@ async fn server_pinger_logic(bot_ctx: &Context, server_data: &mut ServerData) ->
                 .map(|data| data.clone())
                 .unwrap_or_default();
             if let Some(player_online_record) = player_data.set_offline() {
+                println!("{:?}", player_online_record); 
                 player_data.online_record.push(player_online_record);
             }
             players_data_to_update.insert(player_name.to_string(), player_data);

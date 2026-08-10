@@ -55,10 +55,11 @@ impl PlayerData {
             return None;
         }
         self.total_online_seconds = self.get_current_online_secs();
+        let duration_secs = self.secs_since_player_join().unwrap_or(0); 
         self.is_online = false;
         return Some(PlayerOnlineRecord::new_with_duration_secs(
             Utc::now(),
-            self.secs_since_player_join().unwrap_or(0),
+            duration_secs, 
         ));
     }
 }
